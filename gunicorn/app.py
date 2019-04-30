@@ -7,11 +7,13 @@ import hashlib
 app = Flask(__name__)
 
 def createSessionAuthenticated(userName):
-	sid = secrets.token_hex(32)
+	h = hashlib.sha512()
+	h.update(str.encode(userName))
+	sid = h.hexdigest()
 
 	db = sqlite3.connect("session_data.sqlite3")
 	c = db.cursor()
-	c.execute("INSERT INTO sessions VALUES (:sid, (SELECT datetime('now','+1 hour')), :userName);", {"sid": sid, "userName": userName})
+	c.execute("INSERT OR REPLACE INTO sessions VALUES (:sid, (SELECT datetime('now','+1 hour')), :userName);", {"sid": sid, "userName": userName})
 	db.commit()
 	db.close()
 
