@@ -1,8 +1,8 @@
-from flask import Flask, request, make_response
-import datetime
+from flask import Flask, request, make_response, render_template, redirect
 import sqlite3
 import secrets
 import hashlib
+import re
 
 app = Flask(__name__)
 
@@ -11,7 +11,7 @@ def createSessionAuthenticated(userName):
 	h.update(str.encode(userName))
 	sid = h.hexdigest()
 
-	db = sqlite3.connect("session_data.sqlite3")
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("INSERT OR REPLACE INTO sessions VALUES (:sid, (SELECT datetime('now','+1 hour')), :userName);", {"sid": sid, "userName": userName})
 	db.commit()
@@ -20,7 +20,7 @@ def createSessionAuthenticated(userName):
 	return (sid, 3600)
 
 def removeSession(sessionID):
-	db = sqlite3.connect("session_data.sqlite3")
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("DELETE FROM sessions WHERE sessionID = :sid;", {"sid": sessionID})
 	db.commit()
@@ -29,7 +29,7 @@ def removeSession(sessionID):
 	return ("", 0)
 
 def removeSessionsExpired():
-	db = sqlite3.connect("session_data.sqlite3")
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("DELETE FROM sessions WHERE expiresAfter < (SELECT datetime('now'));")
 	db.commit()
@@ -43,7 +43,7 @@ def createUser(userName, password):
 	h.update(str.encode(password))
 	hash = h.hexdigest()
 
-	db = sqlite3.connect("session_data.sqlite3")
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	try:
 		c.execute("INSERT INTO users VALUES (:userName, :salt, :hash);", {"userName": userName, "salt": salt, "hash": hash})
@@ -60,7 +60,7 @@ def getSession(request):
 	if sessionCookie == None:
 		return None
 
-	db = sqlite3.connect("session_data.sqlite3")
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("SELECT sessionID, expiresAfter, userName FROM sessions WHERE sessionID = :sid;", {"sid": sessionCookie})
 	session = c.fetchone()
@@ -68,106 +68,126 @@ def getSession(request):
 
 	return session
 
-def login(request, userName, password):
-	db = sqlite3.connect("session_data.sqlite3")
+def auth(userName, password):
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("SELECT salt, hash FROM users WHERE userName = :userName;", {"userName": userName})
 	r = c.fetchone()
 	db.close()
 
 	if r == None:
-		return None # unknown user name
-
-	salt = r[0]
-	hashDB = r[1]
+		return False # unknown user name
 
 	h = hashlib.sha512()
-	h.update(str.encode(salt))
+	h.update(str.encode(r[0])) # salt
 	h.update(str.encode(password))
 	hash = h.hexdigest()
 
-	if hashDB == hash:
-		# invalidate any old session
-		session = getSession(request)
-		if session != None:
-			removeSession(session[0])
+	return r[1] == hash
 
+def login(userName, password):
+	if auth(userName, password):
 		return createSessionAuthenticated(userName)
-	else:
-		return None # wrong username / password
+	return None
 
 def initDB():
-	db = sqlite3.connect("session_data.sqlite3")
+	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("CREATE TABLE IF NOT EXISTS sessions (sessionID TEXT NOT NULL UNIQUE, expiresAfter TEXT NOT NULL, userName TEXT NOT NULL, PRIMARY KEY(sessionID));")
 	c.execute("CREATE TABLE IF NOT EXISTS users (userName TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, hash TEXT NOT NULL, PRIMARY KEY(userName));")
 	db.commit()
 	db.close()
 
-@app.route("/python")
+def validUserName(userName):
+	# a valid user name may contain only alphanumeric characters
+	# and must be at least 4 and at most 32 characters long
+	return not re.match(r"^[a-zA-Z0-9]{4,32}$", userName) == None
+
+def validPassword(password):
+	# a valid password may contain only alphanumeric characters or underscores
+	# and must be at least 8 and at most 32 characters long
+	return not re.match(r"^[a-zA-Z0-9_]{8,32}$", password) == None
+
+@app.route("/index.html")
 def pageIndex():
 	session = getSession(request)
 
 	if session == None:
-		return "<h3>Whupp whupp! Not logged in.</h3>"
+		return render_template("index.html")
 
-	return "<h3>Whupp whupp! Logged in as: {}</h3>".format(session[2])
+	return render_template("index.html", session = session, userName = session[2])
 
-@app.route("/python/login")
+@app.route("/login.html", methods=['GET', 'POST'])
 def pageLogin():
-	result = login(request, "testUserName", "testPassword")
+	# redirect if user is already logged in
+	if not getSession(request) == None:
+		return redirect("index.html")
 
-	if result == None:
-		return "<h3>Wrong username / password</h3>"
+	if request.method == "POST":
+		try:
+			userProvided = request.form["user"]
+			passwordProvided = request.form["password"]
+		except KeyError:
+			abort(400)
 
-	response = make_response("<h3>Logging in...</h3>")
-	response.set_cookie(key = "session", value = result[0],
-			max_age = result[1], httponly = True);
-	return response
+		if not validUserName(userProvided) or not validPassword(passwordProvided):
+			return render_template("login.html", msg = "Illegal input")
 
-@app.route("/python/logout")
+		result = login(userProvided, passwordProvided)
+		if result == None:
+			return render_template("login.html", msg = "Wrong username / password", user = userProvided)
+
+		# redirect on successful login
+		response = redirect("index.html")
+		response.set_cookie(key = "session", value = result[0],
+				max_age = result[1]);
+		return response
+	else:
+		return render_template("login.html")
+
+@app.route("/logout.html", methods=['POST'])
 def pageLogout():
 	session = getSession(request)
 
+	# redirect if user is not logged in
 	if session == None:
-		return "<h3>Whupp whupp! Not logged in.</h3>"
+		return redirect("index.html")
 
 	result = removeSession(session[0])
 
-	response = make_response("<h3>Whupp whupp! Logged out.</h3>")
+	# redirect on successful logout
+	response = redirect("index.html")
 	response.set_cookie(key = "session", value = result[0],
-			max_age = result[1], httponly = True);
+			max_age = result[1]);
 	return response
 
-@app.route("/python/register")
+@app.route("/register.html", methods=['GET', 'POST'])
 def pageRegister():
-	result = createUser("testUserName", "testPassword")
+	# redirect if user is already logged in
+	if not getSession(request) == None:
+		return redirect("index.html")
 
-	if result == False:
-		return "<h3>Username already exists.</h3>"
+	if request.method == "POST":
+		try:
+			userProvided = request.form["user"]
+			passwordProvided = request.form["password"]
+		except KeyError:
+			abort(400)
 
-	return "<h3>Account created</h3>"
+		if not validUserName(userProvided) or not validPassword(passwordProvided):
+			return render_template("register.html", msg = "Illegal input")
 
-@app.route('/python/db')
-def pageDEBUGDB():
-	db = sqlite3.connect("session_data.sqlite3")
-	c = db.cursor()
-	c.execute("SELECT * FROM sessions;")
-	sessions = c.fetchall()
-	c.execute("SELECT * FROM users;")
-	users = c.fetchall()
-	db.close()
+		if not createUser(userProvided, passwordProvided):
+			return render_template("register.html", msg = "Username already exists", user = userProvided)
 
-	result = ""
+		# login once user is created
+		result = login(userProvided, passwordProvided)
 
-	result += "<h3>Sessions</h3>"
-	for session in sessions:
-		result += "SessionID " + session[0] + " expiresAfter " + session[1] + " User " + session[2] + "<br />"
-
-	result += "<h3>Users</h3>"
-	for user in users:
-		result += "Username " + user[0] + " Salt " + user[1] + " Hash " + user[2] + "<br />"
-
-	return result
+		response = redirect("index.html")
+		response.set_cookie(key = "session", value = result[0],
+				max_age = result[1]);
+		return response
+	else:
+		return render_template("register.html")
 
 initDB()

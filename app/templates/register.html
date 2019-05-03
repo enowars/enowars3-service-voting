@@ -1,0 +1,6 @@
+{% if msg %}<p>{{ msg }}</p>{% endif %}
+<form action="/register.html" method="post"> 
+	<input type="text" name="user"{% if user %} value="{{ user }}"{% endif %}><label for="user">Username</label>
+	<input type="password" name="password"><label for="password">Passwort</label>
+	<input type="submit" value="Login">
+</form>
