@@ -1,5 +1,7 @@
 # Cyber Voting Webapp
 
+Working on this: lig.red // Lito Goldmann
+
 ## Planned and Potential Service Features
 
 Users can take part in online votings about various topics and
@@ -15,12 +17,8 @@ Users may pay the page operators for displaying their votings to more people.
 
 Users may earn some kind of points for participating.
 
-### Login and Registration
-
-Some honeypot could be funny: login by uploading some private key via a form?
-
 ## Planned vulnerabilites
 
-* Broken session management, maybe predictable session IDs, allowing anyone to become an other user
-* Broken nginx config, maybe using redirections to custom error pages, allowing unintentional access to some page
-* Side channel attack using differences in respose time leaking an users login credentials or the flag directly
+* Predictable session IDs, allowing anyone to become an any user
+* Broken nginx config, allowing unintentional access to some log file leaking flags
+* (PoC missing) Side channel attack using differences in respose time leaking an users login credentials
