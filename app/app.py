@@ -105,8 +105,8 @@ def validUserName(userName):
 
 def validPassword(password):
 	# a valid password may contain only alphanumeric characters or underscores
-	# and must be at least 8 and at most 32 characters long
-	return not re.match(r"^[a-zA-Z0-9_]{8,32}$", password) == None
+	# and must be at least 4 and at most 32 characters long
+	return not re.match(r"^[a-zA-Z0-9_]{4,32}$", password) == None
 
 @app.route("/index.html")
 def pageIndex():
@@ -131,7 +131,7 @@ def pageLogin():
 			abort(400)
 
 		if not validUserName(userProvided) or not validPassword(passwordProvided):
-			return render_template("login.html", msg = "Illegal input")
+			return render_template("login.html", msg = "Wrong username / password")
 
 		result = login(userProvided, passwordProvided)
 		if result == None:
