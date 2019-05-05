@@ -1,10 +1,185 @@
-{% if session %}
-<p>Logged in as: {{ userName }}</p>
-<form action="/logout.html" method="post">
-	<input type="submit" value="Logout">
-</form>
-{% else %}
-<p>Not logged in.</p>
-<p><a href="login.html">Login</a></p>
-<p><a href="register.html">Register</a></p>
-{% endif %}
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Cyber Voting</title>
+		<link type="text/css" rel="stylesheet" href="./main.css" />
+		<!--<link type="image/x-icon" rel="icon" href="./fav.ico" />-->
+		<!--<script type="text/javascript" src="./main.js"></script>-->
+	</head>
+
+	<body>
+		<!--<noscript></noscript>-->
+		<div id="container">
+			<header id="header">
+				<h1><a href="index.html">Cyber Voting</a></h1><span>Start winning now!</span>
+			</header>
+
+			<nav>
+				{% if session %}
+				<div id="logout">
+					<span>Welcome, {{ userName }}!</span>
+					<form action="/logout.html" method="post">
+						<input type="submit" value="Logout">
+					</form>
+				</div>
+				{% else %}
+				<div id="login">
+					<a href="login.html">Login</a>
+					<a href="register.html">Register</a>
+				</div>
+				{% endif %}
+			</nav>
+
+			<section id="content">
+				<article class="vote-group">
+					<h2><a href="index.html">Top of the Day</a></h2>
+					<hr>
+					<div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div>
+					<div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div><div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div>
+				</article>
+
+				<article class="vote-group">
+					<h2><a href="index.html">Recently Added</a></h2>
+					<hr>
+					<div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div>
+					<div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div><div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div>
+				</article>
+
+				<article class="vote-group">
+					<h2><a href="index.html">Not participated jet</a></h2>
+					<hr>
+					<div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div>
+					<div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div><div class="vote">
+						<h3><a href="index.html">Vote about this example topic!</a></h3>
+						<hr>
+						<div>
+							<span>255 / 512</span>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="Yes" name="Vote">
+								<input type="submit" value="Yes" class="vote-yes">
+							</form>
+							<form action="/index.html?v=1" method="post">
+								<input type="hidden" value="No" name="Vote">
+								<input type="submit" value="No" class="vote-no">
+							</form>
+						</div>
+					</div>
+				</article>
+			</section>
+		</div>
+	</body>
+</html>
