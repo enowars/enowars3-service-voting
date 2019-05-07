@@ -2,6 +2,7 @@
 {% block content %}
 <article>
 	<h2><a href="/vote.html?v=1" class="title-link">Vote about this example topic!</a></h2>
+	{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
 	<div class="vote-single">
 		<span>255 / 512</span>
 		<form action="/vote.html?v=1" method="post">

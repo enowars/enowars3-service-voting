@@ -92,20 +92,53 @@ def login(userName, password):
 	return None
 
 def vote(user, voteID, votedYes):
-	return True # TODO
+	if getPoll(voteID) == None:
+		return False
 
-def getPoll(id):
-	return True # TODO
+	db = sqlite3.connect("data.sqlite3")
+	c = db.cursor()
+	try:
+		c.execute("INSERT INTO votes VALUES (:pollID, :userName, :votedYes);", {"pollID": voteID, "userName": user, "votedYes": votedYes})
+	except sqlite3.IntegrityError: # already voted
+		db.close()
+		return False
+	db.commit()
+	db.close()
+
+	return True
+
+def getPoll(pollID):
+	db = sqlite3.connect("data.sqlite3")
+	c = db.cursor()
+	c.execute("SELECT pollID, title, description, creator, creatorsNotes FROM polls WHERE pollID = :id;", {"id": pollID})
+	poll = c.fetchone()
+	db.close()
+
+	return poll
 
 def createPoll(user, title, description, notes):
-	return 1 # TODO
+	# get ID for new poll
+	db = sqlite3.connect("data.sqlite3")
+	c = db.cursor()
+	c.execute("(SELECT count(*) + 1 FROM polls)")
+	pollID = c.fetchone()[0]
+
+	# create poll
+	c.execute("INSERT INTO polls VALUES (:id, :title, :description, :creator, :creatorsNotes, (SELECT datetime('now')) );",
+			{"id": pollID, "title": title, "description": description, "creator": user, "creatorsNotes": notes})
+	db.commit()
+	db.close()
+
+	# return pollID
+	return pollID
 
 def initDB():
 	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("CREATE TABLE IF NOT EXISTS sessions (sessionID TEXT NOT NULL UNIQUE, expiresAfter TEXT NOT NULL, userName TEXT NOT NULL, PRIMARY KEY(sessionID));")
 	c.execute("CREATE TABLE IF NOT EXISTS users (userName TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, hash TEXT NOT NULL, PRIMARY KEY(userName));")
-	c.execute("CREATE TABLE IF NOT EXISTS polls (pollID INTEGER NOT NULL UNIQUE, header TEXT NOT NULL, description TEXT NOT NULL, creator TEXT NOT NULL, creatorsNotes TEXT, PRIMARY KEY(pollID));")
+	c.execute("CREATE TABLE IF NOT EXISTS polls (pollID INTEGER NOT NULL UNIQUE, title TEXT NOT NULL, description TEXT NOT NULL, \
+			creator TEXT NOT NULL, creatorsNotes TEXT, creationDate TEXT NOT NULL, PRIMARY KEY(pollID));")
 	c.execute("CREATE TABLE IF NOT EXISTS votes (pollID INTEGER NOT NULL, userName TEXT NOT NULL, votedYes INTEGER NOT NULL, PRIMARY KEY(pollID, userName));")
 	db.commit()
 	db.close()
@@ -119,6 +152,36 @@ def validPassword(password):
 	# a valid password may contain only alphanumeric characters or underscores
 	# and must be at least 4 and at most 32 characters long
 	return not re.match(r"^[a-zA-Z0-9_]{4,32}$", password) == None
+
+def validVoteID(voteID):
+	# a valid voteID may contain only numeric characters
+	# and must be at least 1 character long
+	# and must be greater as zero
+	if re.match(r"^[0-9]+$", voteID) == None:
+		return False
+	return int(voteID) > 0
+
+def validVoteType(voteType):
+	return voteType == "Yes" or voteType == "No"
+
+def validPollTitle(title):
+	# a valid poll title may contain only alphanumeric characters or spaces
+	# and must be at least 4 and at most 48 characters long
+	# and must not start with a space, lower case letter or number
+	# and must not end with a space
+	return not re.match(r"^[A-Z][a-zA-Z0-9 ]{2,46}[a-zA-Z0-9]$", title) == None
+
+def validPollDescription(description):
+	# a valid poll description may contain any characters except a newline
+	# and must be at least 4 and at most 256 characters long
+	# and must start with a upper case letter
+	# and must not end with whitespace
+	return not re.match(r"^[A-Z].{2,254}\S$", description) == None
+
+def validPollPrivateNotes(notes):
+	# a valid poll private note may contain any characters except a newline
+	# and must be at most 64 characters long
+	return not re.match(r"^.{,64}$", notes) == None
 
 @app.route("/index.html")
 def pageIndex():
@@ -212,21 +275,23 @@ def pageVote():
 		except KeyError:
 			abort(400)
 
-		# TODO validate input
+		if not validVoteID(voteIDProvided) or not validVoteType(voteTypeProvided):
+			return render_template("vote.html", msg = "Illegal input", session = session)
 
 		success = vote(session[2], voteIDProvided, voteTypeProvided)
 
 		if success == False:
 			return render_template("vote.html", msg = "Vote failed. Already participated, vote ended or not found.", session = session)
 
-		return redirect("vote.html?v={}".format(voteIDProvided)) # TODO Injection
+		return redirect("vote.html?v={}".format(voteIDProvided))
 	else:
 		try:
 			voteIDProvided = request.args["v"]
 		except KeyError:
 			return redirect("index.html")
 
-		# TODO validate input
+		if not validVoteID(voteIDProvided):
+			return render_template("vote.html", msg = "Vote not found.", session = session)
 
 		voteInfo = getPoll(voteIDProvided)
 
@@ -252,7 +317,9 @@ def pageCreate():
 		except KeyError:
 			abort(400)
 
-		# TODO validate input
+		if not validPollTitle(titleProvided) or not validPollDescription(descriptionProvided) or not validPollPrivateNotes(notesProvided):
+			return render_template("create.html", session = session, current = "create",
+					title = titleProvided, description = descriptionProvided, notes = notesProvided, msg = "Illegal input.")
 
 		result = createPoll(session[2], titleProvided, descriptionProvided, notesProvided)
 
