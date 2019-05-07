@@ -12,21 +12,22 @@
 	<body>
 		<!--<noscript></noscript>-->
 		<header id="header">
-			<h1><a href="index.html">Cyber Voting</a></h1><span>Start winning now!</span>
+			<h1><a href="/index.html">Cyber Voting</a></h1><span>Start winning now!</span>
 		</header>
 
 		<nav>
 			{% if session %}
 			<div id="logout">
 				<span>Welcome, {{ session[2] }}!</span>
+				<a href="/create.html"{% if current == "create" %} class="currentPage"{% endif %}>Create Vote</a>
 				<form action="/logout.html" method="post">
 					<input type="submit" value="Logout">
 				</form>
 			</div>
 			{% else %}
 			<div id="login">
-				<a href="login.html"{% if current == "login" %} class="currentPage"{% endif %}>Login</a>
-				<a href="register.html"{% if current == "reg" %} class="currentPage"{% endif %}>Register</a>
+				<a href="/login.html"{% if current == "login" %} class="currentPage"{% endif %}>Login</a>
+				<a href="/register.html"{% if current == "reg" %} class="currentPage"{% endif %}>Register</a>
 			</div>
 			{% endif %}
 		</nav>

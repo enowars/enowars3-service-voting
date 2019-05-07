@@ -97,6 +97,9 @@ def vote(user, voteID, votedYes):
 def getPoll(id):
 	return True # TODO
 
+def createPoll(user, title, description, notes):
+	return 1 # TODO
+
 def initDB():
 	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
@@ -231,5 +234,34 @@ def pageVote():
 			return render_template("vote.html", msg = "Vote not found.", session = session)
 
 		return render_template("vote.html", session = session)
+
+
+@app.route("/create.html", methods=['GET', 'POST'])
+def pageCreate():
+	session = getSession(request)
+
+	# redirect if user is not logged in
+	if session == None:
+		return redirect("login.html")
+
+	if request.method == "POST":
+		try:
+			titleProvided = request.form["title"]
+			descriptionProvided = request.form["description"]
+			notesProvided = request.form["notes"]
+		except KeyError:
+			abort(400)
+
+		# TODO validate input
+
+		result = createPoll(session[2], titleProvided, descriptionProvided, notesProvided)
+
+		if result == None:
+			return render_template("create.html", session = session, current = "create",
+					title = titleProvided, description = descriptionProvided, notes = notesProvided, msg = "Creation failed.")
+
+		return redirect("vote.html?v={}".format(result))
+	else:
+		return render_template("create.html", session = session, current = "create")
 
 initDB()

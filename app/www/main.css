@@ -41,7 +41,7 @@ nav {
 	padding: 0 1.5em;
 }
 
-#login a {
+#login a, #logout a {
 	flex: 0 0 20%;
 	text-align: center;
 	text-decoration: none;
@@ -49,7 +49,7 @@ nav {
 	padding: 0.5em 0;
 }
 
-#login a:hover {
+#login a:hover, #logout a:hover {
 	background-color: #1a1a1a;
 }
 
@@ -84,6 +84,7 @@ nav {
 	font-size: 1em;
 	width: 100%;
 	height: 100%;
+	padding: 0.5em 0;
 }
 
 #logout form input:hover {
@@ -209,6 +210,19 @@ nav {
 .login-form input[type="submit"] {
 	grid-column: 1 / -1;
 	grid-row: -2 / -1;
+}
+
+.simple-form {
+	display: flex;
+	flex-flow: row wrap;
+}
+
+.simple-form > * {
+	flex: 1 1 100%;
+}
+
+.simple-form label, .simple-form input[type="submit"] {
+	margin-top: 1em;
 }
 
 .msg {

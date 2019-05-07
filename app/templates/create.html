@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+	<h2><a href="/create.html" class="title-link">Create Vote</a></h2>
+	{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+	<form action="/create.html" method="post" class="simple-form">
+		<label for="title">Vote Title</label><input type="text" name="title"{% if title %} value="{{ title }}"{% endif %}>
+		<label for="description">Vote Description</label><textarea name="description" rows="10" cols="50">{% if description %}{{ description }}{% endif %}</textarea>
+		<label for="notes">Private Notes (only visible to you)</label><input type="text" name="notes"{% if notes %} value="{{ notes }}"{% endif %}>
+		<input type="submit" value="Create Vote">
+	</form>
+</article>
+{% endblock %}
