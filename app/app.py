@@ -5,6 +5,7 @@ import hashlib
 import re
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 def createSessionAuthenticated(userName):
 	h = hashlib.sha512()
@@ -90,11 +91,19 @@ def login(userName, password):
 		return createSessionAuthenticated(userName)
 	return None
 
+def vote(user, voteID, votedYes):
+	return True # TODO
+
+def getPoll(id):
+	return True # TODO
+
 def initDB():
 	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
 	c.execute("CREATE TABLE IF NOT EXISTS sessions (sessionID TEXT NOT NULL UNIQUE, expiresAfter TEXT NOT NULL, userName TEXT NOT NULL, PRIMARY KEY(sessionID));")
 	c.execute("CREATE TABLE IF NOT EXISTS users (userName TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, hash TEXT NOT NULL, PRIMARY KEY(userName));")
+	c.execute("CREATE TABLE IF NOT EXISTS polls (pollID INTEGER NOT NULL UNIQUE, header TEXT NOT NULL, description TEXT NOT NULL, creator TEXT NOT NULL, creatorsNotes TEXT, PRIMARY KEY(pollID));")
+	c.execute("CREATE TABLE IF NOT EXISTS votes (pollID INTEGER NOT NULL, userName TEXT NOT NULL, votedYes INTEGER NOT NULL, PRIMARY KEY(pollID, userName));")
 	db.commit()
 	db.close()
 
@@ -110,12 +119,7 @@ def validPassword(password):
 
 @app.route("/index.html")
 def pageIndex():
-	session = getSession(request)
-
-	if session == None:
-		return render_template("index.html")
-
-	return render_template("index.html", session = session, userName = session[2])
+	return render_template("index.html", session = getSession(request))
 
 @app.route("/login.html", methods=['GET', 'POST'])
 def pageLogin():
@@ -131,11 +135,11 @@ def pageLogin():
 			abort(400)
 
 		if not validUserName(userProvided) or not validPassword(passwordProvided):
-			return render_template("login.html", msg = "Wrong username / password")
+			return render_template("login.html", msg = "Wrong username / password", current = "login")
 
 		result = login(userProvided, passwordProvided)
 		if result == None:
-			return render_template("login.html", msg = "Wrong username / password", user = userProvided)
+			return render_template("login.html", msg = "Wrong username / password", user = userProvided, current = "login")
 
 		# redirect on successful login
 		response = redirect("index.html")
@@ -143,7 +147,7 @@ def pageLogin():
 				max_age = result[1]);
 		return response
 	else:
-		return render_template("login.html")
+		return render_template("login.html", current = "login")
 
 @app.route("/logout.html", methods=['POST'])
 def pageLogout():
@@ -175,10 +179,10 @@ def pageRegister():
 			abort(400)
 
 		if not validUserName(userProvided) or not validPassword(passwordProvided):
-			return render_template("register.html", msg = "Illegal input")
+			return render_template("register.html", msg = "Illegal input", current = "reg")
 
 		if not createUser(userProvided, passwordProvided):
-			return render_template("register.html", msg = "Username already exists", user = userProvided)
+			return render_template("register.html", msg = "Username already exists", user = userProvided, current = "reg")
 
 		# login once user is created
 		result = login(userProvided, passwordProvided)
@@ -188,6 +192,44 @@ def pageRegister():
 				max_age = result[1]);
 		return response
 	else:
-		return render_template("register.html")
+		return render_template("register.html", current = "reg")
+
+@app.route("/vote.html", methods=['GET', 'POST'])
+def pageVote():
+	session = getSession(request)
+	
+	if request.method == "POST":
+		# redirect if user is not logged in
+		if session == None:
+			return redirect("login.html")
+
+		try:
+			voteIDProvided = request.args["v"]
+			voteTypeProvided = request.form["vote"]
+		except KeyError:
+			abort(400)
+
+		# TODO validate input
+
+		success = vote(session[2], voteIDProvided, voteTypeProvided)
+
+		if success == False:
+			return render_template("vote.html", msg = "Vote failed. Already participated, vote ended or not found.", session = session)
+
+		return redirect("vote.html?v={}".format(voteIDProvided)) # TODO Injection
+	else:
+		try:
+			voteIDProvided = request.args["v"]
+		except KeyError:
+			return redirect("index.html")
+
+		# TODO validate input
+
+		voteInfo = getPoll(voteIDProvided)
+
+		if voteInfo == None:
+			return render_template("vote.html", msg = "Vote not found.", session = session)
+
+		return render_template("vote.html", session = session)
 
 initDB()
