@@ -1,6 +1,12 @@
-{% if msg %}<p>{{ msg }}</p>{% endif %}
-<form action="/login.html" method="post"> 
-	<input type="text" name="user"{% if user %} value="{{ user }}"{% endif %}><label for="user">Username</label>
-	<input type="password" name="password"><label for="password">Passwort</label>
-	<input type="submit" value="Login">
-</form>
+{% extends "base.html" %}
+{% block content %}
+<article>
+	<h2><a href="/login.html" class="title-link">Login</a></h2>
+	{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+	<form action="/login.html" method="post" class="login-form">
+		<label for="user">Username</label><input type="text" name="user"{% if user %} value="{{ user }}"{% endif %}>
+		<label for="password">Passwort</label><input type="password" name="password">
+		<input type="submit" value="Login">
+	</form>
+</article>
+{% endblock %}
