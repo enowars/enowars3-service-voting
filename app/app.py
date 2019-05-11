@@ -120,7 +120,7 @@ def createPoll(user, title, description, notes):
 	# get ID for new poll
 	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
-	c.execute("(SELECT count(*) + 1 FROM polls)")
+	c.execute("SELECT count(*) + 1 FROM polls;")
 	pollID = c.fetchone()[0]
 
 	# create poll
@@ -131,6 +131,29 @@ def createPoll(user, title, description, notes):
 
 	# return pollID
 	return pollID
+
+def getVotes(pollID):
+	db = sqlite3.connect("data.sqlite3")
+	c = db.cursor()
+	c.execute("SELECT count(*) FROM votes WHERE pollID = :id AND votedYes = :yes;", {"id": pollID, "yes": True})
+	votesYes = c.fetchone()
+	c.execute("SELECT count(*) FROM votes WHERE pollID = :id AND votedYes = 0;", {"id": pollID})
+	votesNo = c.fetchone()
+	db.close()
+
+	return (votesYes[0], votesNo[0])
+
+def votedYes(pollID, username):
+	db = sqlite3.connect("data.sqlite3")
+	c = db.cursor()
+	c.execute("SELECT votedYes FROM votes WHERE pollID = :id AND userName = :username;", {"id": pollID, "username": username})
+	userVotedYes = c.fetchone()
+	db.close()
+
+	if userVotedYes is None:
+		return None
+
+	return userVotedYes[0]
 
 def initDB():
 	db = sqlite3.connect("data.sqlite3")
@@ -278,7 +301,7 @@ def pageVote():
 		if not validVoteID(voteIDProvided) or not validVoteType(voteTypeProvided):
 			return render_template("vote.html", msg = "Illegal input", session = session)
 
-		success = vote(session[2], voteIDProvided, voteTypeProvided)
+		success = vote(session[2], voteIDProvided, voteTypeProvided == "Yes")
 
 		if success == False:
 			return render_template("vote.html", msg = "Vote failed. Already participated, vote ended or not found.", session = session)
@@ -293,13 +316,22 @@ def pageVote():
 		if not validVoteID(voteIDProvided):
 			return render_template("vote.html", msg = "Vote not found.", session = session)
 
-		voteInfo = getPoll(voteIDProvided)
+		pollInfo = getPoll(voteIDProvided)
 
-		if voteInfo == None:
+		if pollInfo is None:
 			return render_template("vote.html", msg = "Vote not found.", session = session)
 
-		return render_template("vote.html", session = session)
+		(votesYes, votesNo) = getVotes(voteIDProvided)
 
+		if session != None:
+			userVotedYes = votedYes(voteIDProvided, session[2])
+		else:
+			userVotedYes = None
+
+		return render_template("vote.html", session = session, pollID = pollInfo[0],
+				pollTitle = pollInfo[1], pollDescription = pollInfo[2],
+				pollCreator = pollInfo[3], pollCreatorsNotes = pollInfo[4],
+				votesYes = votesYes, votesNo = votesNo, votedYes = userVotedYes)
 
 @app.route("/create.html", methods=['GET', 'POST'])
 def pageCreate():

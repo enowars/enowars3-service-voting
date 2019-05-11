@@ -1,41 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
 <article>
-	<h2><a href="/vote.html?v=1" class="title-link">Vote about this example topic!</a></h2>
-	{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+	{% if msg %}
+	<h2 class="msg">{{ msg }}</h2>
+	{% else %}
+	<h2><a href="/vote.html?v={{ pollID }}" class="title-link">{{ pollTitle }}</a></h2>
 	<div class="vote-single">
-		<span>255 / 512</span>
-		<form action="/vote.html?v=1" method="post">
-			<input type="hidden" value="Yes" name="vote">
-			<input type="submit" value="Yes" class="vote-button vote-yes">
-		</form>
-		<form action="/vote.html?v=1" method="post">
-			<input type="hidden" value="No" name="vote">
-			<input type="submit" value="No" class="vote-button vote-no">
-		</form>
+		<div class="vote-bar">
+			<div class="vote-bar-yes">Yes: {{ votesYes }}</div><div class="vote-bar-no">No: {{ votesNo }}</div>
+		</div>
+		{% if session %}
+			{% if votedYes == None %}
+			<form action="/vote.html?v={{ pollID }}" method="post">
+				<input type="hidden" value="Yes" name="vote">
+				<input type="submit" value="Yes" class="vote-button vote-yes">
+			</form>
+			<form action="/vote.html?v={{ pollID }}" method="post">
+				<input type="hidden" value="No" name="vote">
+				<input type="submit" value="No" class="vote-button vote-no">
+			</form>
+			{% elif votedYes %}
+			<div class="voted-yes">You voted: Yes</div>
+			{% else %}
+			<div class="voted-no">You voted: No</div>
+			{% endif %}
+		{% else %}
+		<a href="/login.html">Login</a> to start voting.
+		{% endif %}
 	</div>
 	<p>
-		Vote created by: TestTestUserUser<br/>
+		Vote created by: {{ pollCreator }}<br/>
 		Due for approval till: JJJJ-MM-TT HH:MM GMT oder so
 	</p>
 	<h3>Description</h3>
-	<p>
-		Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-	</p>
-	<p>
-		Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. 
-	</p>
-	<p>
-		Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. 
-	</p>
-	<p>
-		Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-	</p>
-	<p>
-		Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. 
-	</p>
-	<p>
-		Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. 
-	</p>
+	<p>{{ pollDescription }}</p>
+	{% if session[2] == pollCreator and pollCreatorsNotes|length > 0 %}
+	<h3>Your private notes</h3>
+	<p>{{ pollCreatorsNotes }}</p>
+	{% endif %}
+	{% endif %}
 </article>
 {% endblock %}

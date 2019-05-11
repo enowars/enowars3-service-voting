@@ -167,10 +167,51 @@ nav {
 	margin: 0 0.7em 0.7em 0.7em;
 }
 
-.vote-single span {
+.vote-bar {
 	flex: 1 1 100%;
-	background-color: orange;
 	margin: 0.7em;
+	height: 1.5em;
+	border-radius: 4px;
+	border: 2px solid white;
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: space-between;
+}
+
+.vote-bar-yes {
+	flex: 1 1 50%;
+	display: inline-block;
+	background-color: #00b300;
+	height: 100%;
+	text-align: center;
+	font-size: 1.3em;
+}
+
+.vote-bar-no {
+	flex: 1 1 50%;
+	display: inline-block;
+	background-color: #b30000;
+	height: 100%;
+	text-align: center;
+	font-size: 1.3em;
+}
+
+.voted-yes {
+	flex: 1 1 100%;
+	margin: 0 0.7em 0.7em 0.7em;
+	padding: 0.1em;
+	border-radius: 4px;
+	text-align: center;
+	background-color: #00b300;
+}
+
+.voted-no {
+	flex: 1 1 100%;
+	margin: 0 0.7em 0.7em 0.7em;
+	padding: 0.1em;
+	border-radius: 4px;
+	text-align: center;
+	background-color: #b30000;
 }
 
 .vote-button {
