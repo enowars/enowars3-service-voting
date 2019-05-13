@@ -102,21 +102,6 @@ nav {
 	margin: 1.5em 0 0 0;
 }
 
-.sub-article {
-	background-color: #333333;
-	padding: 0.7em 0;
-	border-radius: 1em;
-}
-
-.sub-article h2 {
-	padding: 0 0.7em;
-	margin: 0;
-}
-
-.sub-article hr {
-	margin-bottom: 0;
-}
-
 .title-link {
 	text-decoration: none;
 	color: #e6e6e6;
@@ -124,6 +109,10 @@ nav {
 
 .title-link:hover {
 	text-decoration: underline;
+}
+
+.link {
+	color: #e6e6e6;
 }
 
 .vote {
@@ -136,23 +125,6 @@ nav {
 .vote h3 {
 	padding: 0 0.7em;
 	margin: 0;
-}
-
-.vote div {
-	display: flex;
-	flex-flow: row wrap;
-	justify-content: space-around;
-}
-
-.vote form {
-	flex: 1 20%;
-	margin: 0.7em;
-}
-
-.vote span {
-	flex: 1 40%;
-	background-color: orange;
-	margin: 0.7em;
 }
 
 .vote-single {
@@ -212,6 +184,15 @@ nav {
 	border-radius: 4px;
 	text-align: center;
 	background-color: #b30000;
+}
+
+.voted-none {
+	flex: 1 1 100%;
+	margin: 0 0.7em 0.7em 0.7em;
+	padding: 0.1em;
+	border-radius: 4px;
+	text-align: center;
+	background-color: #333333;
 }
 
 .vote-button {
@@ -274,6 +255,7 @@ nav {
 	#login, #logout {
 		flex-direction: column;
 		padding: 0px;
+		text-align: center;
 	}
 	
 	#header h1 {

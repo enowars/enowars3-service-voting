@@ -10,7 +10,7 @@
 			<div class="vote-bar-yes">Yes: {{ votesYes }}</div><div class="vote-bar-no">No: {{ votesNo }}</div>
 		</div>
 		{% if session %}
-			{% if votedYes == None %}
+			{% if votedYes is none %}
 			<form action="/vote.html?v={{ pollID }}" method="post">
 				<input type="hidden" value="Yes" name="vote">
 				<input type="submit" value="Yes" class="vote-button vote-yes">
@@ -25,7 +25,7 @@
 			<div class="voted-no">You voted: No</div>
 			{% endif %}
 		{% else %}
-		<a href="/login.html">Login</a> to start voting.
+			<div class="voted-none"><a href="/login.html" class="link">Login</a> or <a href="/register.html" class="link">Register</a> to start voting.</div>
 		{% endif %}
 	</div>
 	<p>

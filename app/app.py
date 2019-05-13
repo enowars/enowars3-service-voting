@@ -208,7 +208,25 @@ def validPollPrivateNotes(notes):
 
 @app.route("/index.html")
 def pageIndex():
-	return render_template("index.html", session = getSession(request))
+	session = getSession(request)
+
+	db = sqlite3.connect("data.sqlite3")
+	c = db.cursor()
+	c.execute("SELECT polls.pollID, title, sum(votedYes), count(votedYes) FROM polls \
+		LEFT JOIN votes ON polls.pollID == votes.pollID \
+		GROUP BY polls.pollID \
+		ORDER BY polls.pollID DESC;") # sum(votesYes) is None, if count(votedYes) is 0
+	polls = c.fetchall() # [(pollID_66, pollTitle_66, votesYes, votesTotal), (pollID_65, pollTitle_65, votesYes, votesTotal), ...]
+
+	if session != None:
+		c.execute("SELECT pollID, votedYes FROM votes WHERE userName = :userName;", {"userName": session[2]})
+		userVotedYes = dict(c.fetchall()) # {pollID_1: 1, pollID_4: 0, ...}
+	else:
+		userVotedYes = {}
+
+	db.close()
+
+	return render_template("index.html", session = session, polls = polls, votedYes = userVotedYes)
 
 @app.route("/login.html", methods=['GET', 'POST'])
 def pageLogin():
