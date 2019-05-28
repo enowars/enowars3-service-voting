@@ -4,8 +4,8 @@
 	<h2><a href="/register.html" class="title-link">Register</a></h2>
 	{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
 	<form action="/register.html" method="post" class="login-form"> 
-		<label for="user">Username</label><input type="text" name="user"{% if user %} value="{{ user }}"{% endif %}>
-		<label for="password">Passwort</label><input type="password" name="password">
+		<label for="user">Username</label><input type="text" name="user" required minlength="4" maxlength="32"{% if user %} value="{{ user }}"{% endif %}>
+		<label for="password">Passwort</label><input type="password" name="password" required minlength="4" maxlength="64">
 		<input type="submit" value="Register">
 	</form>
 </article>

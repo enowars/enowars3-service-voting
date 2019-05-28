@@ -4,9 +4,9 @@
 	<h2><a href="/create.html" class="title-link">Create Vote</a></h2>
 	{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
 	<form action="/create.html" method="post" class="simple-form">
-		<label for="title">Vote Title</label><input type="text" name="title"{% if title %} value="{{ title }}"{% endif %}>
-		<label for="description">Vote Description</label><textarea name="description" rows="10" cols="50">{% if description %}{{ description }}{% endif %}</textarea>
-		<label for="notes">Private Notes (only visible to you)</label><input type="text" name="notes"{% if notes %} value="{{ notes }}"{% endif %}>
+		<label for="title">Vote Title</label><input type="text" name="title" required title="4...48 characters allowed" minlength="4" maxlength="48"{% if title %} value="{{ title }}"{% endif %}>
+		<label for="description">Vote Description</label><textarea name="description" rows="10" cols="50" required title="4...512 characters allowed" minlength="4" maxlength="512">{% if description %}{{ description }}{% endif %}</textarea>
+		<label for="notes">Private Notes (only visible to you)</label><input type="text" name="notes" title="0...128 characters allowed" maxlength="128"{% if notes %} value="{{ notes }}"{% endif %}>
 		<input type="submit" value="Create Vote">
 	</form>
 </article>

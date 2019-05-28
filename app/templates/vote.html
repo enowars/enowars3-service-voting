@@ -28,10 +28,7 @@
 			<div class="voted-none"><a href="/login.html" class="link">Login</a> or <a href="/register.html" class="link">Register</a> to start voting.</div>
 		{% endif %}
 	</div>
-	<p>
-		Vote created by: {{ pollCreator }}<br/>
-		Due for approval till: JJJJ-MM-TT HH:MM GMT oder so
-	</p>
+	<p>Vote created by: {{ pollCreator }}</p>
 	<h3>Description</h3>
 	<p>{{ pollDescription }}</p>
 	{% if session[2] == pollCreator and pollCreatorsNotes|length > 0 %}

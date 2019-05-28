@@ -1,4 +1,4 @@
-FROM python:3.8.0a3-alpine3.9
+FROM python:alpine3.8
 
 RUN pip install flask gunicorn
 

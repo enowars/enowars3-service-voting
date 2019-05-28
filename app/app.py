@@ -29,6 +29,7 @@ def removeSession(sessionID):
 
 	return ("", 0)
 
+@app.before_request
 def removeSessionsExpired():
 	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
@@ -63,7 +64,9 @@ def getSession(request):
 
 	db = sqlite3.connect("data.sqlite3")
 	c = db.cursor()
-	c.execute("SELECT sessionID, expiresAfter, userName FROM sessions WHERE sessionID = :sid;", {"sid": sessionCookie})
+	c.execute("UPDATE sessions SET expiresAfter = (SELECT datetime('now','+1 hour')) WHERE sessionID = :sid;", {"sid": sessionCookie})
+	db.commit()
+	c.execute("SELECT sessionID, strftime('%s', expiresAfter) - strftime('%s','now') as max_age, userName FROM sessions WHERE sessionID = :sid;", {"sid": sessionCookie})
 	session = c.fetchone()
 	db.close()
 
@@ -167,14 +170,18 @@ def initDB():
 	db.close()
 
 def validUserName(userName):
-	# a valid user name may contain only alphanumeric characters
-	# and must be at least 4 and at most 32 characters long
-	return not re.match(r"^[a-zA-Z0-9]{4,32}$", userName) == None
+	# a valid user name must be a string and at least 4 and at most 32 characters long
+	if type(userName) is str:
+		return 3 < len(userName) < 33
+	else:
+		return False
 
 def validPassword(password):
-	# a valid password may contain only alphanumeric characters or underscores
-	# and must be at least 4 and at most 32 characters long
-	return not re.match(r"^[a-zA-Z0-9_]{4,32}$", password) == None
+	# a valid password must be a string and at least 4 and at most 64 characters long
+	if type(password) is str:
+		return 3 < len(password) < 65
+	else:
+		return False
 
 def validVoteID(voteID):
 	# a valid voteID may contain only numeric characters
@@ -188,23 +195,25 @@ def validVoteType(voteType):
 	return voteType == "Yes" or voteType == "No"
 
 def validPollTitle(title):
-	# a valid poll title may contain only alphanumeric characters or spaces
-	# and must be at least 4 and at most 48 characters long
-	# and must not start with a space, lower case letter or number
-	# and must not end with a space
-	return not re.match(r"^[A-Z][a-zA-Z0-9 ]{2,46}[a-zA-Z0-9]$", title) == None
+	# a valid poll title must be a string and at least 4 and at most 48 characters long
+	if type(title) is str:
+		return 3 < len(title) < 49
+	else:
+		return False
 
 def validPollDescription(description):
-	# a valid poll description may contain any characters except a newline
-	# and must be at least 4 and at most 256 characters long
-	# and must start with a upper case letter
-	# and must not end with whitespace
-	return not re.match(r"^[A-Z].{2,254}\S$", description) == None
+	# a valid poll description must be a string and at least 4 and at most 512 characters long
+	if type(description) is str:
+		return 3 < len(description) < 513
+	else:
+		return False
 
 def validPollPrivateNotes(notes):
-	# a valid poll private note may contain any characters except a newline
-	# and must be at most 64 characters long
-	return not re.match(r"^.{,64}$", notes) == None
+	# a valid poll private note must be a string and must be at most 128 characters long
+	if type(notes) is str:
+		return len(notes) < 129
+	else:
+		return False
 
 @app.route("/index.html")
 def pageIndex():
@@ -226,13 +235,19 @@ def pageIndex():
 
 	db.close()
 
-	return render_template("index.html", session = session, polls = polls, votedYes = userVotedYes)
+	response = make_response(render_template("index.html", session = session, polls = polls, votedYes = userVotedYes))
+	if session:
+		response.set_cookie(key = "session", value = session[0], max_age = session[1])
+	return response
 
 @app.route("/login.html", methods=['GET', 'POST'])
 def pageLogin():
 	# redirect if user is already logged in
-	if not getSession(request) == None:
-		return redirect("index.html")
+	session = getSession(request)
+	if not session == None:
+		response = redirect("index.html")
+		response.set_cookie(key = "session", value = session[0], max_age = session[1])
+		return response
 
 	if request.method == "POST":
 		try:
@@ -275,8 +290,11 @@ def pageLogout():
 @app.route("/register.html", methods=['GET', 'POST'])
 def pageRegister():
 	# redirect if user is already logged in
-	if not getSession(request) == None:
-		return redirect("index.html")
+	session = getSession(request)
+	if not session == None:
+		response = redirect("index.html")
+		response.set_cookie(key = "session", value = session[0], max_age = session[1])
+		return response
 
 	if request.method == "POST":
 		try:
@@ -317,27 +335,42 @@ def pageVote():
 			abort(400)
 
 		if not validVoteID(voteIDProvided) or not validVoteType(voteTypeProvided):
-			return render_template("vote.html", msg = "Illegal input", session = session)
+			response = make_response(render_template("vote.html", msg = "Illegal input", session = session))
+			response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
 		success = vote(session[2], voteIDProvided, voteTypeProvided == "Yes")
 
 		if success == False:
-			return render_template("vote.html", msg = "Vote failed. Already participated, vote ended or not found.", session = session)
+			response = make_response(render_template("vote.html", msg = "Vote failed. Already participated, vote ended or not found.", session = session))
+			response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
-		return redirect("vote.html?v={}".format(voteIDProvided))
+		response = redirect("vote.html?v={}".format(voteIDProvided))
+		response.set_cookie(key = "session", value = session[0], max_age = session[1])
+		return response
 	else:
 		try:
 			voteIDProvided = request.args["v"]
 		except KeyError:
-			return redirect("index.html")
+			response = redirect("index.html")
+			if session:
+				response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
 		if not validVoteID(voteIDProvided):
-			return render_template("vote.html", msg = "Vote not found.", session = session)
+			response = make_response(render_template("vote.html", msg = "Vote not found.", session = session), 404)
+			if session:
+				response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
 		pollInfo = getPoll(voteIDProvided)
 
 		if pollInfo is None:
-			return render_template("vote.html", msg = "Vote not found.", session = session)
+			response = make_response(render_template("vote.html", msg = "Vote not found.", session = session), 404)
+			if session:
+				response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
 		(votesYes, votesNo) = getVotes(voteIDProvided)
 
@@ -346,10 +379,14 @@ def pageVote():
 		else:
 			userVotedYes = None
 
-		return render_template("vote.html", session = session, pollID = pollInfo[0],
+		response = make_response(render_template("vote.html", session = session, pollID = pollInfo[0],
 				pollTitle = pollInfo[1], pollDescription = pollInfo[2],
 				pollCreator = pollInfo[3], pollCreatorsNotes = pollInfo[4],
-				votesYes = votesYes, votesNo = votesNo, votedYes = userVotedYes)
+				votesYes = votesYes, votesNo = votesNo, votedYes = userVotedYes))
+
+		if session:
+			response.set_cookie(key = "session", value = session[0], max_age = session[1])
+		return response
 
 @app.route("/create.html", methods=['GET', 'POST'])
 def pageCreate():
@@ -368,17 +405,25 @@ def pageCreate():
 			abort(400)
 
 		if not validPollTitle(titleProvided) or not validPollDescription(descriptionProvided) or not validPollPrivateNotes(notesProvided):
-			return render_template("create.html", session = session, current = "create",
-					title = titleProvided, description = descriptionProvided, notes = notesProvided, msg = "Illegal input.")
+			response = make_response(render_template("create.html", session = session, current = "create",
+					title = titleProvided, description = descriptionProvided, notes = notesProvided, msg = "Illegal input."))
+			response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
 		result = createPoll(session[2], titleProvided, descriptionProvided, notesProvided)
 
 		if result == None:
-			return render_template("create.html", session = session, current = "create",
-					title = titleProvided, description = descriptionProvided, notes = notesProvided, msg = "Creation failed.")
+			response = make_response(render_template("create.html", session = session, current = "create",
+					title = titleProvided, description = descriptionProvided, notes = notesProvided, msg = "Creation failed."))
+			response.set_cookie(key = "session", value = session[0], max_age = session[1])
+			return response
 
-		return redirect("vote.html?v={}".format(result))
+		response = redirect("vote.html?v={}".format(result))
+		response.set_cookie(key = "session", value = session[0], max_age = session[1])
+		return response
 	else:
-		return render_template("create.html", session = session, current = "create")
+		response = make_response(render_template("create.html", session = session, current = "create"))
+		response.set_cookie(key = "session", value = session[0], max_age = session[1])
+		return response
 
 initDB()
