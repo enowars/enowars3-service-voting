@@ -1,2 +1,3 @@
 service/app/__pycache__/
 service/app/data.sqlite3
+checker/.data/*
