@@ -11,7 +11,7 @@ services:
 	networks:
     	default:
         voting_network:
-            ipv6_address: fd00:1337:0:f07e::1
+            ipv6_address: fd00:1337:TEAMID:f07e::1
   gunicorn:
     build: ./gunicorn
     volumes:
@@ -22,5 +22,5 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: fd00:1337:0:f07e::/64
-          gateway: fd00:1337:0:f07e::ffff
+        - subnet: fd00:1337:TEAMID:f07e::/64
+          gateway: fd00:1337:TEAMID:f07e::ffff
