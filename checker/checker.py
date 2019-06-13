@@ -14,6 +14,10 @@ def generate_content_no_whitespace(amount):
 
 class VotingChecker(BaseChecker):
     port = 80
+    flag_count = 1
+    noise_count = 1
+    havoc_count = 1
+    service_name = "voting"
 
     def putflag(self) -> None:
 
@@ -220,20 +224,27 @@ class VotingChecker(BaseChecker):
                                   allow_redirects=False)
         assert_equals(302, response.status_code, "'/create.html' is broken")
 
-        vote_path = urllib.parse.urlparse(response.headers["Location"]).path
+        vote_location = urllib.parse.urlparse(response.headers["Location"])
+        assert_equals("/vote.html", vote_location.path, "'/vote.html' is broken (GET)")
+
+        try:
+            response_query = urllib.parse.parse_qs(vote_location.query, strict_parsing=True)
+            vote_id = int(response_query.get("v")[0])
+        except Exception:
+            raise BrokenServiceException("'/create.html' redirects wrong")
 
         # check vote created
-        response = self.http_get(route=vote_path, allow_redirects=False)
-        assert_equals(200, response.status_code, "'/vote.html' is broken")
+        response = self.http_get(route="/vote.html?v={}".format(vote_id), allow_redirects=False)
+        assert_equals(200, response.status_code, "'/vote.html' is broken (GET)")
         assert_in(title, response.text, "'/vote.html' don't contain title")
         assert_in(description, response.text, "'/vote.html' don't contain description")
         assert_in(notes, response.text, "'/vote.html' don't contain notes")
         assert_in("<p>Vote created by: {}</p>".format(user), response.text, "'/vote.html' don't contain user created by")
 
         # vote yes
-        response = self.http_post(route=vote_path, data={"vote": "yes"}, allow_redirects=False)
-        assert_equals(302, response.status_code, "'/vote.html' is broken")
-        assert_equals(vote_path, urllib.parse.urlparse(response.headers["Location"]).path, "'/vote.html' is broken")
+        response = self.http_post(route="/vote.html?v={}".format(vote_id), data={"vote": "Yes"}, allow_redirects=False)
+        assert_equals(302, response.status_code, "'/vote.html' is broken (POST)")
+        assert_equals(vote_location.path, urllib.parse.urlparse(response.headers["Location"]).path, "'/vote.html' is broken (POST)")
 
     def exploit(self) -> None:
 
