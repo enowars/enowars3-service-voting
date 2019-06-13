@@ -127,7 +127,7 @@ def createPoll(user, title, description, notes):
 	pollID = c.fetchone()[0]
 
 	# create poll
-	c.execute("INSERT INTO polls VALUES (:id, :title, :description, :creator, :creatorsNotes, (SELECT datetime('now')) );",
+	c.execute("INSERT INTO polls VALUES (:id, :title, :description, :creator, :creatorsNotes);",
 			{"id": pollID, "title": title, "description": description, "creator": user, "creatorsNotes": notes})
 	db.commit()
 	db.close()
@@ -164,9 +164,39 @@ def initDB():
 	c.execute("CREATE TABLE IF NOT EXISTS sessions (sessionID TEXT NOT NULL UNIQUE, expiresAfter TEXT NOT NULL, userName TEXT NOT NULL, PRIMARY KEY(sessionID));")
 	c.execute("CREATE TABLE IF NOT EXISTS users (userName TEXT NOT NULL UNIQUE, salt TEXT NOT NULL, hash TEXT NOT NULL, PRIMARY KEY(userName));")
 	c.execute("CREATE TABLE IF NOT EXISTS polls (pollID INTEGER NOT NULL UNIQUE, title TEXT NOT NULL, description TEXT NOT NULL, \
-			creator TEXT NOT NULL, creatorsNotes TEXT, creationDate TEXT NOT NULL, PRIMARY KEY(pollID));")
+			creator TEXT NOT NULL, creatorsNotes TEXT, PRIMARY KEY(pollID));")
 	c.execute("CREATE TABLE IF NOT EXISTS votes (pollID INTEGER NOT NULL, userName TEXT NOT NULL, votedYes INTEGER NOT NULL, PRIMARY KEY(pollID, userName));")
 	db.commit()
+
+	# add some initial data if tables are empty
+	c.execute("SELECT count(*) FROM polls;")
+	if c.fetchone()[0] == 0:
+		users = ["Jade", "Sara", "Andrew", "Emma", "Cole", "Reece"]
+		polls = [("Party Hard 🥳", "Vote yes 👍 for a state-aided 24/7 party with free drinks and food in all major cities. Improve society!"),
+			("Ban Annoying Selfies 🤳", "Selfies where invented by the devil 👿 and therefore should not be allowed!"),
+			("Anti Alien 👽 Act", "Aliens threaten the earth 🌏 and this should be forbidden."),
+			("Support Organic Farming 👩‍🌾", "Organic Farming is a very good way to increase food quality 🍆🥕🌶 and decrease environmental damage. The earth 🌏 needs this!"),
+			("Strengthen Offensive Cyber War Capabilities 👩‍💻", "All cool states need offensive cyber war capabilities to show how cool they are! Burn it down! 🔥🔥🔥"),
+			("Ban Wizards & Vampires from Public Places 🧙🧛‍♀️", "Groups of violent wizards and vampires are hanging out in the streets threatening \
+				defenceless grandmas. Stop them!"),
+			("Implement Basic Income 🤑", "A basic income enables social participation and a happy life for everyone. Stop working until you break! Take a break, start living!"),
+			("Add Unicorns to the IUCN Red List 🦄", "Have you saw any unicorns in the recent time? No! Save unicorns by adding them to the Red List.")]
+
+		# create some users
+		for user in users:
+			c.execute("INSERT OR IGNORE INTO users VALUES (:userName, :salt, :hash);", {"userName": user, "salt": secrets.token_hex(32), "hash": secrets.token_hex(64)})
+		db.commit()
+
+		# create some votings
+		for id, poll in enumerate(polls, 1):
+			c.execute("INSERT OR IGNORE INTO polls VALUES (:id, :title, :description, :creator, '');", {"id": id, "title": poll[0], "description": poll[1], "creator": secrets.choice(users)})
+		db.commit()
+
+		# create some votes
+		for user in users:
+			for poll in range(1, len(polls) + 1):
+				c.execute("INSERT OR IGNORE INTO votes VALUES (:id, :userName, :votedYes);", {"id": poll, "userName": user, "votedYes": secrets.choice([True, False])})
+		db.commit()
 	db.close()
 
 def validUserName(userName):
