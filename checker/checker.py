@@ -61,7 +61,10 @@ class VotingChecker(BaseChecker):
 
     def getflag(self) -> None:
 
-        (vote_id, user, password) = self.team_db[self.flag]
+        try:
+            (vote_id, user, password) = self.team_db[self.flag]
+        except KeyError:
+            return Result.MUMBLE
 
         # login
         response = self.http_post(route="/login.html", data={"user": user, "password": password}, allow_redirects=False)
@@ -115,7 +118,10 @@ class VotingChecker(BaseChecker):
 
     def getnoise(self) -> None:
 
-        vote_id = self.team_db[self.flag + str(self.flag_idx)]
+        try:
+            vote_id = self.team_db[self.flag + str(self.flag_idx)]
+        except KeyError:
+            return Result.MUMBLE
 
         # get vote
         response = self.http_get(route="/vote.html", params={"v": vote_id})
