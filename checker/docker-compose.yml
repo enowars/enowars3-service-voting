@@ -2,6 +2,7 @@ version: '3'
 services:
   voting-backend:
     build: .
+    image: 10.13.37.7:5000/voting-backend
     networks:
      - bridge
      - enoverlay
@@ -19,6 +20,12 @@ services:
       - voting-backend
     networks:
       - enoverlay
+    labels:
+        - "traefik.enable=true"
+        - "traefik.backend=checker_voting"
+        - "traefik.docker.network=enoverlay"
+        - "traefik.frontend.rule=Host:voting.checker.enowars.com,service9.checker.enowars.com"
+        - "traefik.port=80"
 networks:
   bridge:
     external: true
