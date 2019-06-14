@@ -1,10 +1,16 @@
-version: '2.2'
+version: '3'
 services:
   voting-backend:
     build: .
     networks:
-      checkernet:
-        ipv6_address: fd00:1337:0:cecc:9::2
+     - bridge
+     - enoverlay
+    environment:
+     - MONGO_ENABLED=1
+     - MONGO_HOST=checkerdb_mongo_1
+     - MONGO_PORT=27017
+     - MONGO_USER=ipv6islove
+     - MONGO_PASSWORD=dockerislove
   voting-frontend:
     image: nginx:1.13-alpine
     volumes:
@@ -12,8 +18,9 @@ services:
     depends_on:
       - voting-backend
     networks:
-      checkernet:
-        ipv6_address: fd00:1337:0:cecc:9::1
+      - enoverlay
 networks:
-  checkernet:
+  bridge:
+    external: true
+  enoverlay:
     external: true
