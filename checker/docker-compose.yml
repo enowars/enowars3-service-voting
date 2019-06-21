@@ -22,7 +22,7 @@ services:
       - enoverlay
     labels:
         - "traefik.enable=true"
-        - "traefik.backend=checker_voting"
+        - "traefik.backend=voting-checker"
         - "traefik.docker.network=enoverlay"
         - "traefik.frontend.rule=Host:voting.checker.enowars.com,service9.checker.enowars.com"
         - "traefik.port=80"
