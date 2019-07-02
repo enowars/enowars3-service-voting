@@ -13,6 +13,7 @@ services:
      - MONGO_PORT=27017
      - MONGO_USER=ipv6islove
      - MONGO_PASSWORD=dockerislove
+
     deploy:
       labels:
         - "traefik.enable=true"
@@ -20,7 +21,7 @@ services:
         - "traefik.docker.network=enoverlay"
         - "traefik.frontend.rule=Host:voting.checker.enowars.com,service9.checker.enowars.com,f07e.checker.enowars.com"
         - "traefik.port=3031"
-      replicas: 1
+
   voting-db:
     image: mongo
     networks:
