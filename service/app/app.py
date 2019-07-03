@@ -254,7 +254,8 @@ def pageIndex():
 	c.execute("SELECT polls.pollID, title, sum(votedYes), count(votedYes) FROM polls \
 		LEFT JOIN votes ON polls.pollID == votes.pollID \
 		GROUP BY polls.pollID \
-		ORDER BY polls.pollID DESC;") # sum(votesYes) is None, if count(votedYes) is 0
+		ORDER BY polls.pollID DESC \
+		LIMIT 50;") # sum(votesYes) is None, if count(votedYes) is 0
 	polls = c.fetchall() # [(pollID_66, pollTitle_66, votesYes, votesTotal), (pollID_65, pollTitle_65, votesYes, votesTotal), ...]
 
 	if session != None:

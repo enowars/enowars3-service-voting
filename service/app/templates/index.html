@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<h2><a href="/index.html" class="title-link">Index / All Votes</a></h2>
+<h2><a href="/index.html" class="title-link">Index / 50 Latest Votes</a></h2>
 {% for poll in polls %}
 <div class="vote">
 	<h3><a href="/vote.html?v={{ poll[0] }}" class="title-link">{{ poll[1] }}</a></h3>
