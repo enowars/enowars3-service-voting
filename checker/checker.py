@@ -13,7 +13,7 @@ def generate_content_no_whitespace(amount):
     return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(amount))
 
 class VotingChecker(BaseChecker):
-    port = 80
+    port = 8003
     flag_count = 1
     noise_count = 1
     havoc_count = 1
